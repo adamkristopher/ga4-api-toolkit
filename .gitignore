@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables (contains secrets)
+.env
+
+# Results (generated data, can be large)
+results/reports/
+results/realtime/
+results/summaries/
+
+# Keep results directories in git
+!results/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Test result directories
+results-test*/
+
+# Logs
+*.log
+npm-debug.log*
