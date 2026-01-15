@@ -21,7 +21,10 @@
   "license": "MIT",
   "dependencies": {
     "@google-analytics/data": "^4.9.0",
-    "dotenv": "^16.4.7"
+    "@googleapis/indexing": "^6.0.1",
+    "@googleapis/searchconsole": "^6.0.1",
+    "dotenv": "^16.4.7",
+    "googleapis": "^170.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

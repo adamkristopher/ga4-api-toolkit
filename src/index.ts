@@ -13,9 +13,11 @@
 export * from './api/reports.js';
 export * from './api/realtime.js';
 export * from './api/metadata.js';
+export * from './api/searchConsole.js';
+export * from './api/indexing.js';
 
 // Re-export core utilities
-export { getClient, getPropertyId, resetClient } from './core/client.js';
+export { getClient, getPropertyId, getSearchConsoleClient, getIndexingClient, getSiteUrl, resetClient } from './core/client.js';
 export { saveResult, loadResult, listResults, getLatestResult } from './core/storage.js';
 export { getSettings, validateSettings } from './config/settings.js';
 
@@ -33,6 +35,14 @@ import {
 import { getActiveUsers, getRealtimeEvents, getRealtimePages } from './api/realtime.js';
 import { getPropertyMetadata } from './api/metadata.js';
 import { saveResult } from './core/storage.js';
+import {
+  getTopQueries,
+  getTopPages as getSearchConsoleTopPages,
+  getDevicePerformance,
+  getCountryPerformance,
+  type SearchConsoleDateRange,
+} from './api/searchConsole.js';
+import { requestIndexing, inspectUrl } from './api/indexing.js';
 
 // ============================================================================
 // HIGH-LEVEL ORCHESTRATION FUNCTIONS
@@ -215,6 +225,126 @@ export async function liveSnapshot() {
 }
 
 // ============================================================================
+// SEARCH CONSOLE ORCHESTRATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Comprehensive Search Console overview
+ */
+export async function searchConsoleOverview(dateRange?: string | SearchConsoleDateRange) {
+  console.log('\n🔍 Generating Search Console overview...');
+  const results: Record<string, unknown> = {};
+
+  console.log('  → Getting top queries...');
+  results.topQueries = await getTopQueries(dateRange);
+
+  console.log('  → Getting top pages...');
+  results.topPages = await getSearchConsoleTopPages(dateRange);
+
+  console.log('  → Getting device performance...');
+  results.devicePerformance = await getDevicePerformance(dateRange);
+
+  console.log('  → Getting country performance...');
+  results.countryPerformance = await getCountryPerformance(dateRange);
+
+  const dateStr = typeof dateRange === 'string' ? dateRange : 'custom';
+  saveResult(results, 'searchconsole', 'overview', dateStr);
+
+  console.log('✅ Search Console overview complete\n');
+  return results;
+}
+
+/**
+ * Deep dive into keyword/query analysis
+ */
+export async function keywordAnalysis(dateRange?: string | SearchConsoleDateRange) {
+  console.log('\n🔑 Analyzing keywords...');
+  const results: Record<string, unknown> = {};
+
+  console.log('  → Getting top queries...');
+  results.queries = await getTopQueries(dateRange);
+
+  console.log('  → Getting device breakdown for queries...');
+  results.deviceBreakdown = await getDevicePerformance(dateRange);
+
+  const dateStr = typeof dateRange === 'string' ? dateRange : 'custom';
+  saveResult(results, 'searchconsole', 'keyword_analysis', dateStr);
+
+  console.log('✅ Keyword analysis complete\n');
+  return results;
+}
+
+/**
+ * SEO page performance analysis
+ */
+export async function seoPagePerformance(dateRange?: string | SearchConsoleDateRange) {
+  console.log('\n📄 Analyzing SEO page performance...');
+  const results: Record<string, unknown> = {};
+
+  console.log('  → Getting top pages by clicks...');
+  results.topPages = await getSearchConsoleTopPages(dateRange);
+
+  console.log('  → Getting country breakdown...');
+  results.countryBreakdown = await getCountryPerformance(dateRange);
+
+  const dateStr = typeof dateRange === 'string' ? dateRange : 'custom';
+  saveResult(results, 'searchconsole', 'seo_page_performance', dateStr);
+
+  console.log('✅ SEO page performance analysis complete\n');
+  return results;
+}
+
+/**
+ * Request re-indexing for updated URLs
+ */
+export async function reindexUrls(urls: string[]) {
+  console.log(`\n🔄 Requesting re-indexing for ${urls.length} URL(s)...`);
+  const results: Array<{ url: string; status: string; error?: string }> = [];
+
+  for (const url of urls) {
+    try {
+      console.log(`  → Requesting indexing: ${url}`);
+      const result = await requestIndexing(url, { save: false });
+      results.push({ url, status: 'submitted', ...result });
+    } catch (error) {
+      console.log(`  ✗ Failed: ${url}`);
+      results.push({ url, status: 'failed', error: String(error) });
+    }
+  }
+
+  saveResult(results, 'indexing', 'reindex_batch');
+  console.log('✅ Re-indexing requests complete\n');
+  return results;
+}
+
+/**
+ * Check index status for URLs
+ */
+export async function checkIndexStatus(urls: string[]) {
+  console.log(`\n🔎 Checking index status for ${urls.length} URL(s)...`);
+  const results: Array<{ url: string; indexed: boolean; status: unknown }> = [];
+
+  for (const url of urls) {
+    try {
+      console.log(`  → Inspecting: ${url}`);
+      const result = await inspectUrl(url, { save: false });
+      results.push({
+        url,
+        indexed: result.indexStatus.verdict === 'PASS',
+        status: result.indexStatus,
+      });
+    } catch (error) {
+      console.log(`  ✗ Failed: ${url}`);
+      results.push({ url, indexed: false, status: { error: String(error) } });
+    }
+  }
+
+  saveResult(results, 'indexing', 'index_status_check');
+  console.log('✅ Index status check complete\n');
+  return results;
+}
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
@@ -236,7 +366,7 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
 GA4 Analytics Toolkit
 =====================
 
-High-level functions:
+GA4 High-level functions:
   - siteOverview(dateRange?)        Comprehensive site snapshot
   - trafficAnalysis(dateRange?)     Deep dive on sources
   - contentPerformance(dateRange?)  Top pages analysis
@@ -244,7 +374,22 @@ High-level functions:
   - compareDateRanges(range1, range2)  Period comparison
   - liveSnapshot()                  Real-time data
 
-Low-level functions:
+Search Console functions:
+  - searchConsoleOverview(dateRange?)  Combined SEO snapshot
+  - keywordAnalysis(dateRange?)        Query/keyword analysis
+  - seoPagePerformance(dateRange?)     Page-level SEO metrics
+  - getTopQueries(dateRange?)          Top search queries
+  - getTopPages(dateRange?)            Top pages by clicks
+  - getDevicePerformance(dateRange?)   Mobile vs desktop
+  - getCountryPerformance(dateRange?)  Traffic by country
+
+Indexing functions:
+  - reindexUrls(urls)                  Request re-indexing for URLs
+  - checkIndexStatus(urls)             Check if URLs are indexed
+  - requestIndexing(url)               Request single URL re-crawl
+  - inspectUrl(url)                    Inspect URL index status
+
+Low-level GA4 functions:
   - runReport({ dimensions, metrics, dateRange })
   - getPageViews(dateRange?)
   - getTrafficSources(dateRange?)

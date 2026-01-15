@@ -1,21 +1,26 @@
 # GA4 Analytics Toolkit
 
-A TypeScript toolkit for Google Analytics 4 data analysis, designed for use with AI assistants like Claude Code.
+A TypeScript toolkit for Google Analytics 4, Google Search Console, and Indexing API - designed for use with AI assistants like Claude Code.
 
 ## Features
 
-- **Simple API** - High-level functions for common analytics tasks
+- **GA4 Analytics** - Traffic, pages, events, conversions, real-time data
+- **Search Console SEO** - Search queries, page performance, device/country breakdown
+- **Indexing API** - Request re-indexing, check URL index status
 - **Auto-save Results** - All API responses automatically saved with timestamps
 - **Type-safe** - Full TypeScript support with interfaces for all responses
 - **Flexible Date Ranges** - Support for shorthand (`"30d"`) and explicit date ranges
-- **Singleton Client** - Efficient credential management
-- **Test Coverage** - Built with TDD, comprehensive test suite included
+- **Test Coverage** - Built with TDD, 78 tests included
 
 ## Prerequisites
 
 - Node.js 18+
 - A Google Analytics 4 property
-- A Google Cloud Platform project with Analytics Data API enabled
+- A Google Search Console property (for SEO features)
+- A Google Cloud Platform project with APIs enabled:
+  - Google Analytics Data API
+  - Google Search Console API
+  - Indexing API
 - Service account credentials
 
 ## Installation
@@ -32,7 +37,10 @@ npm install
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Create a new project (or select existing)
-3. Enable the "Google Analytics Data API"
+3. Enable the following APIs:
+   - Google Analytics Data API
+   - Google Search Console API
+   - Indexing API
 
 ### 2. Create Service Account
 
@@ -46,14 +54,24 @@ npm install
 8. Select JSON and click "Create"
 9. Save the downloaded JSON file securely
 
-### 3. Add Service Account to GA4
+### 3. Add Service Account to GA4 and Search Console
 
+**For GA4:**
 1. Open your GA4 property
 2. Go to Admin > Property Access Management
 3. Click the "+" button to add a user
 4. Enter the service account email (from the JSON key)
 5. Select "Viewer" role
 6. Click "Add"
+
+**For Search Console:**
+1. Open [Google Search Console](https://search.google.com/search-console)
+2. Select your property
+3. Go to Settings > Users and permissions
+4. Click "Add user"
+5. Enter the service account email
+6. Select "Full" permission
+7. Click "Add"
 
 ### 4. Configure Environment
 
@@ -69,9 +87,11 @@ Edit `.env` with your credentials:
 GA4_PROPERTY_ID=123456789
 GA4_CLIENT_EMAIL=your-service-account@your-project.iam.gserviceaccount.com
 GA4_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_KEY_HERE\n-----END PRIVATE KEY-----\n"
+SEARCH_CONSOLE_SITE_URL=https://your-domain.com
 ```
 
-Find your Property ID in GA4 Admin > Property Settings.
+- Find your GA4 Property ID in GA4 Admin > Property Settings
+- Use your exact Search Console property URL (e.g., `https://casso.app/`)
 
 ## Usage
 
@@ -79,6 +99,7 @@ Find your Property ID in GA4 Admin > Property Settings.
 
 Just ask Claude what you want to analyze:
 
+**GA4 Analytics:**
 ```
 "Give me a site overview for the last 30 days"
 "Analyze my traffic sources this week"
@@ -86,28 +107,47 @@ Just ask Claude what you want to analyze:
 "Compare this month to last month"
 ```
 
+**Search Console SEO:**
+```
+"What are my top search queries?"
+"Show me SEO performance by page"
+"Get my Search Console overview"
+```
+
+**Indexing:**
+```
+"Request re-indexing for https://casso.app/blog/new-post"
+"Check if these URLs are indexed"
+```
+
 ### Programmatic Usage
 
 ```typescript
-import { siteOverview, getPageViews, runReport } from './src/index.js';
+import {
+  siteOverview,
+  getPageViews,
+  searchConsoleOverview,
+  getTopQueries,
+  reindexUrls,
+  checkIndexStatus,
+} from './src/index.js';
 
-// High-level analysis
+// GA4 Analytics
 const overview = await siteOverview('30d');
-
-// Specific reports
 const pages = await getPageViews('7d');
 
-// Custom reports
-const custom = await runReport({
-  dimensions: ['country', 'city'],
-  metrics: ['activeUsers', 'sessions'],
-  dateRange: '30d',
-});
+// Search Console SEO
+const seoOverview = await searchConsoleOverview('30d');
+const queries = await getTopQueries('7d');
+
+// Indexing API
+const reindexResult = await reindexUrls(['https://casso.app/blog/new-post']);
+const indexStatus = await checkIndexStatus(['https://casso.app/']);
 ```
 
 ## API Reference
 
-### High-Level Functions
+### GA4 High-Level Functions
 
 | Function | Description |
 |----------|-------------|
@@ -118,7 +158,22 @@ const custom = await runReport({
 | `compareDateRanges(range1, range2)` | Period comparison |
 | `liveSnapshot()` | Real-time data snapshot |
 
-### Reports API
+### Search Console High-Level Functions
+
+| Function | Description |
+|----------|-------------|
+| `searchConsoleOverview(dateRange?)` | Combined SEO snapshot |
+| `keywordAnalysis(dateRange?)` | Query/keyword deep dive |
+| `seoPagePerformance(dateRange?)` | Page-level SEO metrics |
+
+### Indexing High-Level Functions
+
+| Function | Description |
+|----------|-------------|
+| `reindexUrls(urls)` | Request re-indexing for multiple URLs |
+| `checkIndexStatus(urls)` | Check if URLs are indexed |
+
+### GA4 Reports API
 
 | Function | Description |
 |----------|-------------|
@@ -130,7 +185,7 @@ const custom = await runReport({
 | `getConversions(dateRange?)` | Conversion metrics |
 | `getEcommerceRevenue(dateRange?)` | E-commerce metrics |
 
-### Realtime API
+### GA4 Realtime API
 
 | Function | Description |
 |----------|-------------|
@@ -138,13 +193,33 @@ const custom = await runReport({
 | `getRealtimeEvents()` | Live event stream |
 | `getRealtimePages()` | Currently viewed pages |
 
-### Metadata API
+### GA4 Metadata API
 
 | Function | Description |
 |----------|-------------|
 | `getAvailableDimensions()` | List all available dimensions |
 | `getAvailableMetrics()` | List all available metrics |
 | `getPropertyMetadata()` | Full property metadata |
+
+### Search Console API
+
+| Function | Description |
+|----------|-------------|
+| `querySearchAnalytics(options)` | Raw search analytics query |
+| `getTopQueries(dateRange?)` | Top search queries by clicks |
+| `getTopPages(dateRange?)` | Top pages by impressions |
+| `getDevicePerformance(dateRange?)` | Mobile vs desktop breakdown |
+| `getCountryPerformance(dateRange?)` | Traffic by country |
+| `getSearchAppearance(dateRange?)` | Rich results, AMP data |
+
+### Indexing API
+
+| Function | Description |
+|----------|-------------|
+| `requestIndexing(url)` | Request single URL re-crawl |
+| `requestIndexingBatch(urls)` | Batch request for multiple URLs |
+| `removeFromIndex(url)` | Request URL removal from index |
+| `inspectUrl(url)` | Check URL's index status |
 
 ## Date Ranges
 
@@ -173,6 +248,10 @@ results/
 │   └── 20240105_093715__site_overview__30d.json
 ├── realtime/
 │   └── 20240105_094500__snapshot.json
+├── searchconsole/
+│   └── 20240105_100000__overview__30d.json
+├── indexing/
+│   └── 20240105_101500__request_indexing.json
 └── summaries/
     └── january-report.md
 ```

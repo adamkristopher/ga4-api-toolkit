@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a TypeScript toolkit for Google Analytics 4 data analysis using the GA4 Data API. Claude executes analysis functions on your behalf and saves structured results to JSON files, then creates human-readable summary documents for decision-making.
+This is a TypeScript toolkit for Google Analytics 4 data analysis, Google Search Console SEO data, and Indexing API integration. Claude executes analysis functions on your behalf and saves structured results to JSON files, then creates human-readable summary documents for decision-making.
 
 ## Project Structure
 
@@ -14,15 +14,19 @@ GA4/
 │   ├── config/
 │   │   └── settings.ts       # Configuration and defaults
 │   ├── core/
-│   │   ├── client.ts         # GA4 API client (singleton)
+│   │   ├── client.ts         # API clients (GA4, Search Console, Indexing)
 │   │   └── storage.ts        # Auto-save results to JSON
 │   └── api/
-│       ├── reports.ts        # Standard reports (traffic, pages, etc.)
-│       ├── realtime.ts       # Live data
-│       └── metadata.ts       # Available dimensions/metrics
+│       ├── reports.ts        # GA4 standard reports (traffic, pages, etc.)
+│       ├── realtime.ts       # GA4 live data
+│       ├── metadata.ts       # GA4 available dimensions/metrics
+│       ├── searchConsole.ts  # Search Console SEO data
+│       └── indexing.ts       # Indexing API (re-crawl requests)
 └── results/
-    ├── reports/              # Standard report results
+    ├── reports/              # GA4 report results
     ├── realtime/             # Real-time snapshots
+    ├── searchconsole/        # Search Console results
+    ├── indexing/             # Indexing API results
     └── summaries/            # Human-readable markdown summaries
 ```
 
@@ -32,19 +36,41 @@ GA4/
 
 Just tell Claude what you want to analyze:
 
+**GA4 Analytics:**
 - "Give me a site overview for the last 30 days"
 - "Analyze my traffic sources this week"
 - "What are my top pages?"
 - "Show me real-time active users"
 - "Compare this month to last month"
 
+**Search Console SEO:**
+- "What are my top search queries?"
+- "Show me SEO performance by page"
+- "Analyze search traffic by device"
+- "Get my Search Console overview for the last 7 days"
+
+**Indexing:**
+- "Request re-indexing for these URLs: [url1, url2]"
+- "Check if these pages are indexed"
+- "Re-crawl my updated blog posts"
+
 ### Specific Function Requests
 
 For more control, request specific functions:
 
+**GA4:**
 - "Run `siteOverview('30d')` for a comprehensive snapshot"
 - "Get `getPageViews('7d')` to see top pages"
 - "Use `trafficAnalysis('90d')` for traffic deep dive"
+
+**Search Console:**
+- "Run `searchConsoleOverview('30d')` for SEO snapshot"
+- "Get `getTopQueries('7d')` to see search terms"
+- "Use `keywordAnalysis('30d')` for keyword deep dive"
+
+**Indexing:**
+- "Run `reindexUrls(['url1', 'url2'])` to request re-crawl"
+- "Use `checkIndexStatus(['url'])` to verify indexing"
 
 ### Summary Requests
 
@@ -83,7 +109,7 @@ You review the summaries which contain:
 
 ## Available Functions
 
-### High-Level (index.ts)
+### GA4 High-Level (index.ts)
 | Function | Purpose |
 |----------|---------|
 | `siteOverview(dateRange?)` | Comprehensive site snapshot |
@@ -93,7 +119,20 @@ You review the summaries which contain:
 | `compareDateRanges(range1, range2)` | Period comparison |
 | `liveSnapshot()` | Real-time data snapshot |
 
-### Reports API
+### Search Console High-Level
+| Function | Purpose |
+|----------|---------|
+| `searchConsoleOverview(dateRange?)` | Combined SEO snapshot |
+| `keywordAnalysis(dateRange?)` | Query/keyword deep dive |
+| `seoPagePerformance(dateRange?)` | Page-level SEO metrics |
+
+### Indexing High-Level
+| Function | Purpose |
+|----------|---------|
+| `reindexUrls(urls)` | Request re-indexing for multiple URLs |
+| `checkIndexStatus(urls)` | Check if URLs are indexed |
+
+### GA4 Reports API
 | Function | Purpose |
 |----------|---------|
 | `runReport({ dimensions, metrics, dateRange })` | Custom report |
@@ -104,19 +143,37 @@ You review the summaries which contain:
 | `getConversions(dateRange?)` | Conversion data |
 | `getEcommerceRevenue(dateRange?)` | E-commerce metrics |
 
-### Realtime API
+### GA4 Realtime API
 | Function | Purpose |
 |----------|---------|
 | `getActiveUsers()` | Current active users |
 | `getRealtimeEvents()` | Live event stream |
 | `getRealtimePages()` | Currently viewed pages |
 
-### Metadata API
+### GA4 Metadata API
 | Function | Purpose |
 |----------|---------|
 | `getAvailableDimensions()` | List all dimensions |
 | `getAvailableMetrics()` | List all metrics |
 | `getPropertyMetadata()` | Full property info |
+
+### Search Console API
+| Function | Purpose |
+|----------|---------|
+| `querySearchAnalytics(options)` | Raw search analytics query |
+| `getTopQueries(dateRange?)` | Top search queries by clicks |
+| `getTopPages(dateRange?)` | Top pages by impressions |
+| `getDevicePerformance(dateRange?)` | Mobile vs desktop breakdown |
+| `getCountryPerformance(dateRange?)` | Traffic by country |
+| `getSearchAppearance(dateRange?)` | Rich results, AMP data |
+
+### Indexing API
+| Function | Purpose |
+|----------|---------|
+| `requestIndexing(url)` | Request single URL re-crawl |
+| `requestIndexingBatch(urls)` | Batch request for multiple URLs |
+| `removeFromIndex(url)` | Request URL removal |
+| `inspectUrl(url)` | Check URL's index status |
 
 ## Date Range Formats
 
@@ -197,13 +254,22 @@ Generated: [timestamp]
 
 Located in `.env` (not committed to git):
 ```
+# GA4 Analytics
 GA4_PROPERTY_ID=123456789
 GA4_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
 GA4_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Search Console (required for SEO and indexing functions)
+SEARCH_CONSOLE_SITE_URL=https://your-domain.com
 ```
 
 Get credentials by:
 1. Creating a GCP project
-2. Enabling the Google Analytics Data API
+2. Enabling the following APIs:
+   - Google Analytics Data API
+   - Google Search Console API
+   - Indexing API
 3. Creating a service account and downloading JSON key
-4. Adding service account email to GA4 property (Viewer role)
+4. Adding service account email to:
+   - GA4 property (Viewer role)
+   - Search Console property (User role via Settings > Users and permissions)

@@ -27,6 +27,8 @@ export interface Settings {
   defaultDateRange: string;
   /** Directory path for storing results */
   resultsDir: string;
+  /** Search Console site URL (e.g., "https://example.com") */
+  siteUrl: string;
 }
 
 /**
@@ -47,6 +49,7 @@ export function getSettings(): Settings {
     privateKey: (process.env.GA4_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
     defaultDateRange: process.env.GA4_DEFAULT_DATE_RANGE || '30d',
     resultsDir: join(projectRoot, 'results'),
+    siteUrl: process.env.SEARCH_CONSOLE_SITE_URL || '',
   };
 }
 
