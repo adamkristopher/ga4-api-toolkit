@@ -15,6 +15,7 @@ export * from './api/realtime.js';
 export * from './api/metadata.js';
 export * from './api/searchConsole.js';
 export * from './api/indexing.js';
+export * from './api/bulk-lookup.js';
 
 // Re-export core utilities
 export { getClient, getPropertyId, getSearchConsoleClient, getIndexingClient, getSiteUrl, resetClient } from './core/client.js';

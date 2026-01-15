@@ -119,6 +119,29 @@ You review the summaries which contain:
 | `compareDateRanges(range1, range2)` | Period comparison |
 | `liveSnapshot()` | Real-time data snapshot |
 
+### Bulk URL Lookup
+| Function | Purpose |
+|----------|---------|
+| `getMetricsForUrls(urls, options?)` | Get GA4 metrics for specific page paths |
+
+**Usage:**
+```typescript
+// Get metrics for specific pages
+const result = await getMetricsForUrls(['/pricing', '/about', '/blog']);
+
+// With custom date range and metrics
+const result = await getMetricsForUrls(['/pricing'], {
+  dateRange: '7d',
+  metrics: ['sessions', 'bounceRate'],
+  save: false,
+});
+```
+
+**Options:**
+- `dateRange` - Date range string ("7d", "30d") or `{ startDate, endDate }`
+- `metrics` - Custom metrics array (defaults to pageviews, users, duration, bounce, engagement)
+- `save` - Whether to save results to file (default: true)
+
 ### Search Console High-Level
 | Function | Purpose |
 |----------|---------|

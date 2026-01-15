@@ -51,6 +51,31 @@ export const mockMetadataResponse = {
   ],
 };
 
+// Mock response for bulk URL lookup
+export const mockBulkUrlResponse = {
+  dimensionHeaders: [{ name: 'pagePath' }, { name: 'pageTitle' }],
+  metricHeaders: [
+    { name: 'screenPageViews' },
+    { name: 'activeUsers' },
+    { name: 'averageSessionDuration' },
+  ],
+  rows: [
+    {
+      dimensionValues: [{ value: '/pricing' }, { value: 'Pricing' }],
+      metricValues: [{ value: '500' }, { value: '250' }, { value: '120' }],
+    },
+    {
+      dimensionValues: [{ value: '/about' }, { value: 'About Us' }],
+      metricValues: [{ value: '300' }, { value: '180' }, { value: '90' }],
+    },
+  ],
+  rowCount: 2,
+  metadata: {
+    currencyCode: 'USD',
+    timeZone: 'America/Los_Angeles',
+  },
+};
+
 // Create mock client class
 export const createMockClient = () => ({
   runReport: vi.fn().mockResolvedValue([mockRunReportResponse]),
